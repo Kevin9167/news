@@ -33,14 +33,4 @@ jobs:
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
         run: python fetch_news.py
       
-      - name: 📝 Commit and push if changed
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -A
-          if git diff-index --quiet HEAD --; then
-            echo "No changes to commit"
-          else
-            git commit -m "📰 Update AI chip news - $(date +'%Y-%m-%d')"
-            git push https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/Kevin9167/news.git HEAD:main
-          fi
+     
