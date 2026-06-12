@@ -21,6 +21,16 @@ class NewsCollector:
         self.sender_password = os.getenv('SENDER_PASSWORD')
         self.recipient_email = os.getenv('RECIPIENT_EMAIL')
         
+        # 添加调试信息
+        print("\n=== 环境变量检查 ===")
+        print(f"NEWSAPI_KEY: {'✓ 已设置' if self.newsapi_key else '✗ 未设置'}")
+        print(f"SMTP_SERVER: {self.smtp_server if self.smtp_server else '✗ 未设置'}")
+        print(f"SMTP_PORT: {self.smtp_port if self.smtp_port else '✗ 未设置'}")
+        print(f"SENDER_EMAIL: {'✓ 已设置' if self.sender_email else '✗ 未设置'}")
+        print(f"SENDER_PASSWORD: {'✓ 已设置' if self.sender_password else '✗ 未设置'}")
+        print(f"RECIPIENT_EMAIL: {'✓ 已设置' if self.recipient_email else '✗ 未设置'}")
+        print("=" * 50 + "\n")
+        
         if not self.newsapi_key:
             raise ValueError("NEWSAPI_KEY environment variable is required")
         
@@ -197,11 +207,19 @@ class NewsCollector:
         Args:
             articles: 新闻列表
         """
+        print("\n=== 邮件发送步骤 ===")
+        
         if not all([self.sender_email, self.sender_password, self.recipient_email]):
-            print("⚠️  邮件配置不完整，跳过邮件发送")
+            print("⚠️  邮件配置不完整:")
+            print(f"  - SENDER_EMAIL: {'✓' if self.sender_email else '✗'}")
+            print(f"  - SENDER_PASSWORD: {'✓' if self.sender_password else '✗'}")
+            print(f"  - RECIPIENT_EMAIL: {'✓' if self.recipient_email else '✗'}")
+            print("跳过邮件发送")
             return
         
         try:
+            print(f"📧 正在连接到 {self.smtp_server}:{self.smtp_port}...")
+            
             # 创建邮件
             msg = MIMEMultipart('alternative')
             msg['Subject'] = f"🤖 AI 芯片新闻日报 - {datetime.now().strftime('%Y-%m-%d')}"
@@ -234,19 +252,30 @@ AI 芯片新闻日报
             msg.attach(part2)
             
             # 发送邮件
+            print(f"🔑 正在进行 TLS 认证...")
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()
+                print(f"✓ TLS 连接成功")
+                
+                print(f"👤 正在登录 {self.sender_email}...")
                 server.login(self.sender_email, self.sender_password)
+                print(f"✓ 登录成功")
+                
+                print(f"📨 正在发送邮件到 {self.recipient_email}...")
                 server.send_message(msg)
-            
-            print(f"✓ 邮件发送成功: {self.recipient_email}")
+                print(f"✓ 邮件发送成功: {self.recipient_email}")
         
-        except smtplib.SMTPAuthenticationError:
-            print("✗ 邮件认证失败，请检查邮箱账户和密码")
+        except smtplib.SMTPAuthenticationError as e:
+            print(f"✗ 邮件认证失败: {e}")
+            print("  请检查:")
+            print("  - SENDER_EMAIL 是否正确")
+            print("  - SENDER_PASSWORD 是否正确（应为应用专用密码）")
         except smtplib.SMTPException as e:
-            print(f"✗ 邮件发送失败: {e}")
+            print(f"✗ SMTP 错误: {e}")
         except Exception as e:
-            print(f"✗ 邮件发送错误: {e}")
+            print(f"✗ 邮件发送错误: {type(e).__name__}: {e}")
+        
+        print("=" * 50 + "\n")
     
     def save_to_file(self, articles):
         """
@@ -297,7 +326,7 @@ AI 芯片新闻日报
         """
         print("=" * 50)
         print("🚀 开始收集 AI 芯片新闻")
-        print("=" * 50)
+        print("=" * 50 + "\n")
         
         # 获取新闻
         articles = self.fetch_news()
@@ -312,10 +341,9 @@ AI 芯片新闻日报
         self.save_to_file(articles)
         
         # 发送邮件
-        print()
         self.send_email(articles)
         
-        print("\n" + "=" * 50)
+        print("=" * 50)
         print("✓ 新闻收集完成")
         print("=" * 50)
 
